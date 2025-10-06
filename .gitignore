@@ -19,5 +19,8 @@ backend/.env.*
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
+frontend/.npm-cache/
+frontend/.npmrc
+frontend/npm-debug.log*
 frontend/.env
 frontend/.env.*
