@@ -1,0 +1,23 @@
+# macOS
+.DS_Store
+
+# Editor folders
+.idea/
+.vscode/
+
+# Docker artifacts
+*.log
+
+# Laravel backend
+backend/vendor/
+backend/storage/
+backend/bootstrap/cache/
+backend/.env
+backend/.env.*
+
+# Node frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.env
+frontend/.env.*
