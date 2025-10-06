@@ -1,33 +1,33 @@
 # Task Manager
 
-Projeto base com API em PHP (Laravel) e frontend em React + TypeScript usando Docker e docker-compose.
+Starter kit featuring a PHP API (Laravel) and a React + TypeScript frontend, fully containerized with Docker and Docker Compose.
 
-## Requisitos
+## Requirements
 - Docker 24+
 - Docker Compose V2
 
-## Serviços
-- `db`: Postgres 16 (porta 5432)
-- `api`: PHP-FPM 8.3 (Laravel) exposto via Nginx
-- `web`: Nginx servindo Laravel em `http://localhost:8000`
-- `frontend`: Vite dev server React TS em `http://localhost:3000`
+## Services
+- `db`: Postgres 16 (port 5432)
+- `api`: PHP-FPM 8.3 (Laravel) behind Nginx
+- `web`: Nginx serving Laravel at `http://localhost:8000`
+- `frontend`: Vite dev server for React TS at `http://localhost:3000`
 
-## Primeira execução
-1. Copie os envs (opcional, já há alguns defaults):
-   - Backend: `backend/.env` (existe um `backend/.env.example`)
-   - Frontend: copie `frontend/.env.example` para `frontend/.env` e ajuste `VITE_API_URL` se necessário
-2. Suba os containers:
+## First Run
+1. Prepare environment files (optional: defaults are already provided):
+   - Backend: `backend/.env` (template in `backend/.env.example`)
+   - Frontend: copy `frontend/.env.example` to `frontend/.env` and adjust `VITE_API_URL` if needed
+2. Start the stack:
    - `docker compose up --build`
 
-## Bootstrap automático
-- Backend: se não existir um projeto Laravel em `backend/`, o container `api` irá rodar `composer create-project` e gerar a APP KEY, depois executar migrações.
-- Frontend: se não existir `package.json` em `frontend/`, o container irá criar um projeto Vite (template `react-ts`) e instalar dependências.
+## Automatic Bootstrap
+- Backend: if no Laravel project exists inside `backend/`, the `api` container runs `composer create-project`, generates the APP KEY, and executes migrations.
+- Frontend: if `frontend/` has no `package.json`, the container scaffolds a Vite project (`react-ts` template) and installs dependencies.
 
 ## URLs
 - Backend (Nginx): `http://localhost:8000`
 - API (Laravel): `http://localhost:8000/api`
 - Frontend (Vite): `http://localhost:3000`
 
-## Notas
-- O banco já está configurado para Postgres; credenciais em `docker-compose.yml` e `backend/.env`.
-- Ajuste CORS no Laravel conforme `FRONTEND_URL` no `backend/.env` se necessário.
+## Notes
+- Postgres is preconfigured; credentials live in `docker-compose.yml` and `backend/.env`.
+- Update Laravel CORS settings to match the `FRONTEND_URL` in `backend/.env` when needed.
