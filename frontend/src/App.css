@@ -114,12 +114,65 @@ body {
   font-size: 1.35rem;
 }
 
+.app__table-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.app__per-page {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  color: #475569;
+}
+
+.app__per-page select {
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  background-color: #fff;
+  padding: 6px 10px;
+  font-size: 0.95rem;
+  color: #0f172a;
+}
+
 .app__loading {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   color: #475569;
   font-weight: 500;
+}
+
+.app__pagination {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.app__pagination-info {
+  color: #475569;
+  font-weight: 500;
+}
+
+.app__pagination-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app__pagination-page {
+  color: #334155;
+  font-weight: 500;
+}
+
+.app__pagination .button--ghost:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {
@@ -131,5 +184,16 @@ body {
   .button--primary {
     align-self: stretch;
     justify-content: center;
+  }
+
+  .app__table-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .app__table-actions {
+    width: 100%;
+    justify-content: space-between;
   }
 }

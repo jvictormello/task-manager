@@ -39,15 +39,24 @@ export interface TaskFilters {
   created_to?: string;
   updated_from?: string;
   updated_to?: string;
+  page?: number;
 }
 
 export interface TaskListResponse {
   data: Task[];
-  meta?: {
+  meta: {
     current_page: number;
     last_page: number;
     per_page: number;
     total: number;
+    from: number | null;
+    to: number | null;
+  };
+  links: {
+    first: string | null;
+    last: string | null;
+    prev: string | null;
+    next: string | null;
   };
 }
 

@@ -6,19 +6,23 @@ import ConfirmDialog from './components/ConfirmDialog';
 import FeedbackBanner from './components/FeedbackBanner';
 import StatsPanel from './components/StatsPanel';
 import Spinner from './components/Spinner';
-import type { Task, TaskFilters, TaskPayload, TaskStatistics } from './types/task';
+import type { Task, TaskFilters, TaskListResponse, TaskPayload, TaskStatistics } from './types/task';
 import { ApiError, taskApi } from './services/api';
 import './App.css';
 
-const DEFAULT_PER_PAGE = 20;
+const DEFAULT_PER_PAGE = 10;
+const PER_PAGE_OPTIONS = [10, 20, 50];
 
 const App = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [statistics, setStatistics] = useState<TaskStatistics | null>(null);
+  const [pagination, setPagination] = useState<TaskListResponse['meta'] | null>(null);
 
   const [filters, setFilters] = useState<TaskFilters>({});
   const [sortBy, setSortBy] = useState<'created_at' | 'updated_at' | 'due_date' | 'id' | 'title'>('created_at');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(DEFAULT_PER_PAGE);
 
   const [loadingTasks, setLoadingTasks] = useState(false);
   const [loadingStats, setLoadingStats] = useState(false);
@@ -41,19 +45,25 @@ const App = () => {
     try {
       const response = await taskApi.list({
         ...filters,
-        sort_by: sortBy,
-        sort_dir: sortDir,
-        per_page: DEFAULT_PER_PAGE,
+        sortBy,
+        sortDir,
+        perPage,
+        page,
       });
       setTasks(response.data);
+      setPagination(response.meta);
+      if (response.meta.current_page !== page) {
+        setPage(response.meta.current_page);
+      }
     } catch (error) {
       console.error(error);
       const message = error instanceof ApiError ? error.message : 'Unable to load tasks. Please try again.';
       setFeedback({ type: 'error', message });
+      setPagination(null);
     } finally {
       setLoadingTasks(false);
     }
-  }, [filters, sortBy, sortDir]);
+  }, [filters, sortBy, sortDir, page, perPage]);
 
   const loadStatistics = useCallback(async () => {
     setLoadingStats(true);
@@ -156,10 +166,12 @@ const App = () => {
 
   const handleApplyFilters = (newFilters: TaskFilters) => {
     setFilters(newFilters);
+    setPage(1);
   };
 
   const handleClearFilters = () => {
     setFilters({});
+    setPage(1);
   };
 
   const handleSort = (field: 'id' | 'title' | 'created_at' | 'updated_at' | 'due_date') => {
@@ -169,7 +181,25 @@ const App = () => {
       setSortBy(field);
       return nextDir;
     });
+    setPage(1);
   };
+
+  const handlePerPageChange = (value: number) => {
+    setPerPage(value);
+    setPage(1);
+  };
+
+  const handlePageChange = (nextPage: number) => {
+    if (!pagination) return;
+    const clamped = Math.max(1, Math.min(nextPage, pagination.last_page));
+    if (clamped !== page) {
+      setPage(clamped);
+    }
+  };
+
+  const totalTasks = pagination?.total ?? tasks.length;
+  const showingFrom = pagination?.from ?? (tasks.length > 0 ? 1 : 0);
+  const showingTo = pagination?.to ?? tasks.length;
 
   return (
     <div className="app">
@@ -202,12 +232,26 @@ const App = () => {
       <section aria-labelledby="tasks-heading">
         <div className="app__table-header">
           <h2 id="tasks-heading">Tasks</h2>
-          {loadingTasks && (
-            <span className="app__loading">
-              <Spinner />
-              <span>Loading...</span>
-            </span>
-          )}
+          <div className="app__table-actions">
+            <label className="app__per-page" htmlFor="per-page-select">
+              <span>Per page</span>
+              <select
+                id="per-page-select"
+                value={perPage}
+                onChange={(event) => handlePerPageChange(Number(event.target.value))}
+              >
+                {PER_PAGE_OPTIONS.map((option) => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            </label>
+            {loadingTasks && (
+              <span className="app__loading">
+                <Spinner />
+                <span>Loading...</span>
+              </span>
+            )}
+          </div>
         </div>
         <TaskTable
           tasks={tasks}
@@ -222,6 +266,36 @@ const App = () => {
           sortDir={sortDir}
           onSort={handleSort}
         />
+        {pagination && (
+          <div className="app__pagination">
+            <div className="app__pagination-info">
+              {totalTasks > 0
+                ? `Showing ${showingFrom}–${showingTo} of ${totalTasks} tasks`
+                : 'No tasks to display'}
+            </div>
+            <div className="app__pagination-controls">
+              <button
+                type="button"
+                className="button button--ghost"
+                disabled={!pagination || pagination.current_page === 1}
+                onClick={() => handlePageChange((pagination?.current_page ?? 1) - 1)}
+              >
+                Previous
+              </button>
+              <span className="app__pagination-page">
+                Page {pagination.current_page} of {pagination.last_page}
+              </span>
+              <button
+                type="button"
+                className="button button--ghost"
+                disabled={!pagination || pagination.current_page === pagination.last_page}
+                onClick={() => handlePageChange((pagination?.current_page ?? 1) + 1)}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
       <TaskFormModal

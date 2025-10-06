@@ -108,7 +108,7 @@ class TaskRepository implements TaskRepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function search(array $filters = [], ?string $sortBy = null, string $sortDir = 'desc', ?int $perPage = null): LengthAwarePaginator|Collection
+    public function search(array $filters = [], ?string $sortBy = null, string $sortDir = 'desc', ?int $perPage = null): LengthAwarePaginator
     {
         $query = Task::query();
 
@@ -150,17 +150,23 @@ class TaskRepository implements TaskRepositoryInterface
         // Sorting
         $sortBy = $sortBy ?: 'created_at';
         $sortDir = strtolower($sortDir) === 'asc' ? 'asc' : 'desc';
-        if (in_array($sortBy, ['id', 'title', 'created_at', 'updated_at', 'due_date'], true)) {
+        if ($sortBy === 'title') {
+            $query
+                ->orderByRaw('LENGTH(title) ' . $sortDir)
+                ->orderByRaw('LOWER(title) ' . $sortDir)
+                ->orderBy('title', $sortDir);
+        } elseif (in_array($sortBy, ['id', 'created_at', 'updated_at', 'due_date'], true)) {
             $query->orderBy($sortBy, $sortDir);
         } else {
             $query->orderBy('created_at', 'desc');
         }
 
         // Return
-        if ($perPage !== null) {
-            return $query->paginate($perPage);
-        }
+        $perPage = $perPage ?? 10;
 
-        return $query->get();
+        $paginator = $query->paginate($perPage);
+        $paginator->withQueryString();
+
+        return $paginator;
     }
 }
