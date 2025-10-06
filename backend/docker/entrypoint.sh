@@ -34,6 +34,7 @@ if [ -f artisan ]; then
 
   echo "Running migrations..."
   php artisan migrate --force || true
+
 fi
 
 exec "$@"
