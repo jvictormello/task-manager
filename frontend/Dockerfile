@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:20.19-alpine
 
 WORKDIR /app
 
@@ -15,4 +15,3 @@ EXPOSE 3000
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["npm","run","dev","--","--host","0.0.0.0","--port","3000"]
-

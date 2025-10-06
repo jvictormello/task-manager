@@ -29,7 +29,7 @@ class TaskController extends Controller
     public function index(IndexTaskRequest $request)
     {
         $validated = $request->validated();
-        $perPage = $validated['per_page'] ?? null;
+        $perPage = $validated['per_page'] ?? 10;
         $sortBy = $validated['sort_by'] ?? null;
         $sortDir = $validated['sort_dir'] ?? 'desc';
         $filters = array_intersect_key($validated, array_flip([

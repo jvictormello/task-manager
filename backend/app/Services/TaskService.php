@@ -38,10 +38,10 @@ class TaskService implements TaskServiceInterface
      * @param array $filters
      * @param string|null $sortBy
      * @param string $sortDir
-     * @param int|null $perPage
-     * @return LengthAwarePaginator|Collection
+     * @param int|null $perPage Null to use default pagination size
+     * @return LengthAwarePaginator
      */
-    public function search(array $filters = [], ?string $sortBy = null, string $sortDir = 'desc', ?int $perPage = null): LengthAwarePaginator|Collection
+    public function search(array $filters = [], ?string $sortBy = null, string $sortDir = 'desc', ?int $perPage = null): LengthAwarePaginator
     {
         return $this->tasks->search($filters, $sortBy, $sortDir, $perPage);
     }

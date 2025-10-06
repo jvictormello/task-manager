@@ -1,42 +1,199 @@
-#root {
-  max-width: 1280px;
+:root {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #0f172a;
+  background-color: #f8fbff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(circle at top left, rgba(59, 130, 246, 0.12), transparent 45%),
+    radial-gradient(circle at bottom right, rgba(99, 102, 241, 0.12), transparent 45%),
+    #eef3fb;
+  min-height: 100vh;
+}
+
+.app {
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  padding: 32px 20px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.app__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.22), rgba(37, 99, 235, 0.12));
+  padding: 24px 28px;
+  border-radius: 18px;
+  color: #0f172a;
+  box-shadow: 0 20px 45px rgba(59, 130, 246, 0.2);
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
+.app__header h1 {
+  margin: 0 0 6px;
+  font-size: 2rem;
+  letter-spacing: -0.02em;
+}
+
+.app__header p {
+  margin: 0;
+  color: rgba(15, 23, 42, 0.75);
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.button--primary {
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  color: #ffffff;
+  box-shadow: 0 18px 35px rgba(59, 130, 246, 0.35);
+}
+
+.button--primary:hover {
+  transform: translateY(-1px);
+}
+
+.button--secondary {
+  background: linear-gradient(135deg, #6366f1, #3b82f6);
+  color: #fff;
+  border: none;
+  box-shadow: 0 12px 24px rgba(99, 102, 241, 0.3);
+}
+
+.button--secondary:hover {
+  transform: translateY(-1px);
+}
+
+.button--ghost {
+  background-color: transparent;
+  color: #475569;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.button--ghost:hover {
+  background-color: rgba(148, 163, 184, 0.18);
+}
+
+.button--danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+  border: none;
+  box-shadow: 0 12px 25px rgba(220, 38, 38, 0.25);
+}
+
+.button--danger:hover {
+  transform: translateY(-1px);
+}
+
+.app__table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 6px 0 12px;
+}
+
+.app__table-header h2 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.app__table-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.app__per-page {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  color: #475569;
+}
+
+.app__per-page select {
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  background-color: #fff;
+  padding: 6px 10px;
+  font-size: 0.95rem;
+  color: #0f172a;
+}
+
+.app__loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #475569;
+  font-weight: 500;
+}
+
+.app__pagination {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.app__pagination-info {
+  color: #475569;
+  font-weight: 500;
+}
+
+.app__pagination-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app__pagination-page {
+  color: #334155;
+  font-weight: 500;
+}
+
+.app__pagination .button--ghost:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .app__header {
+    flex-direction: column;
+    align-items: flex-start;
   }
-  to {
-    transform: rotate(360deg);
+
+  .button--primary {
+    align-self: stretch;
+    justify-content: center;
   }
-}
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
+  .app__table-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
   }
-}
 
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
+  .app__table-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
 }

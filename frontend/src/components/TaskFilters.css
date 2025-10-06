@@ -1,0 +1,50 @@
+.task-filters {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.task-filters__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.task-filters__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.task-filters__field > label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.task-filters__field input,
+.task-filters__field select {
+  border: 1px solid #d0d8e8;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 0.9rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.task-filters__field input:focus,
+.task-filters__field select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+}
+
+.task-filters__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}

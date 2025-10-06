@@ -28,6 +28,14 @@ Starter kit featuring a PHP API (Laravel) and a React + TypeScript frontend, ful
 - API (Laravel): `http://localhost:8000/api`
 - Frontend (Vite): `http://localhost:3000`
 
+### Frontend UI
+- React + TypeScript single-page app (Vite) with Dockerized dev server
+- Task table with inline actions (edit, delete, mark completed) and status-aware badges
+- Powerful filters (id/title/description/status/priority/date ranges) and column sorting (id/title/created/updated/due)
+- Modal forms for create/edit with validation + error feedback; confirmation dialog for delete
+- Dashboard statistics rendered from `/api/tasks/statistics`
+- Reusable components (filters, modal, spinner, feedback banners) and accessible keyboard-friendly interactions
+
 ## API Docs
 Currently not enabled. If you want Swagger/OpenAPI docs later, we can add it back quickly.
 
@@ -43,10 +51,10 @@ Currently not enabled. If you want Swagger/OpenAPI docs later, we can add it bac
 ```json
 {
   "title": "string (required, max 100)",
-  "description": "string (optional, max 500)",
+  "description": "string (required, max 500)",
   "status": "pending | in_progress | completed",
   "priority": "low | medium | high",
-  "due_date": "ISO-8601 datetime (optional)"
+  "due_date": "ISO-8601 datetime (required)"
 }
 ```
 

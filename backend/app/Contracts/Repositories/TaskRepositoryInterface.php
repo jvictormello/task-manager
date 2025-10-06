@@ -69,8 +69,8 @@ interface TaskRepositoryInterface
      * @param array $filters Key-value filters
      * @param string|null $sortBy One of id,title,created_at,updated_at,due_date
      * @param string $sortDir asc|desc
-     * @param int|null $perPage null to return full collection
-     * @return LengthAwarePaginator|Collection
+     * @param int|null $perPage null to use default pagination size
+     * @return LengthAwarePaginator
      */
-    public function search(array $filters = [], ?string $sortBy = null, string $sortDir = 'desc', ?int $perPage = null): LengthAwarePaginator|Collection;
+    public function search(array $filters = [], ?string $sortBy = null, string $sortDir = 'desc', ?int $perPage = null): LengthAwarePaginator;
 }
