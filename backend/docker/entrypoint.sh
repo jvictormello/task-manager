@@ -32,6 +32,7 @@ mkdir -p storage/framework/cache \
          storage/framework/sessions \
          storage/framework/views \
          storage/logs \
+         storage/api-docs \
          bootstrap/cache
 chmod -R 775 storage bootstrap/cache || true
 chown -R www-data:www-data storage bootstrap/cache || true
@@ -54,6 +55,10 @@ if [ -f artisan ]; then
 
   echo "Running migrations..."
   php artisan migrate --force || true
+
+  # Generate Swagger/OpenAPI docs so UI is ready
+  echo "Generating OpenAPI (Swagger) docs..."
+  php artisan l5-swagger:generate || true
 
 fi
 
