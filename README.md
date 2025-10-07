@@ -15,7 +15,7 @@ Full‑stack task management system with a Laravel (PHP 8.2) API and a React + T
 ## Quick Start with Docker
 ```bash
 # Clone repository
-git clone <repository-url>
+git clone git@github.com:jvictormello/task-manager.git
 cd task-manager
 
 # Prepare env files (optional)
