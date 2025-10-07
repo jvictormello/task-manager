@@ -18,9 +18,12 @@ Full‑stack task management system with a Laravel (PHP 8.2) API and a React + T
 git clone <repository-url>
 cd task-manager
 
-# Prepare env files
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
+# Prepare env files (optional)
+# You can copy the templates now, or skip this step — the API container will
+# seed backend/.env from backend/.env.example on first run. Frontend reads its
+# env at runtime; copying is recommended but not required.
+# cp backend/.env.example backend/.env
+# cp frontend/.env.example frontend/.env
 
 # Start entire stack
 docker compose up -d --build
@@ -46,7 +49,13 @@ docker compose up -d --build
 - Docker:
   - `docker compose exec api php artisan migrate`
 
-Automatic migrations: when the `api` container starts, it runs `php artisan migrate --force` (see `backend/docker/entrypoint.sh`). This means your schema is applied automatically on first boot and any time new migrations are present. If you prefer manual control, you can comment/remove that line in the entrypoint and run migrations explicitly using the commands above.
+Automatic migrations at container startup: the API entrypoint (see `backend/docker/entrypoint.sh`) will:
+- seed backend/.env from backend/.env.example if missing,
+- generate `APP_KEY` when absent,
+- clear caches so the new env is picked up,
+- and then execute `php artisan migrate --force`.
+
+This runs on `docker compose up` (not during image build) and only after Postgres passes healthcheck.
 
 ### Frontend UI
 - React + TypeScript single-page app (Vite) with Dockerized dev server
@@ -128,7 +137,7 @@ cd backend
 php artisan test
 ```
 
-Tip: It’s advisable to run tests via Artisan from the backend directory (`cd backend && php artisan test`) so Laravel loads the testing environment as expected. If you encounter configuration cache issues, run `php artisan config:clear` first.
+Tip: It’s advisable to run tests via Artisan from the backend directory (`cd backend && php artisan test`) so Laravel loads the testing environment as expected. If you encounter configuration cache issues, run `php artisan optimize:clear` or `php artisan config:clear` first.
 
 Frontend dev server:
 ```bash

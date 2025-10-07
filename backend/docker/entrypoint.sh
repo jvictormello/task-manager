@@ -27,10 +27,30 @@ if [ ! -d vendor ] && [ -f composer.json ]; then
   composer install --no-interaction --prefer-dist || true
 fi
 
+# Ensure writable runtime directories exist (first-run safety)
+mkdir -p storage/framework/cache \
+         storage/framework/sessions \
+         storage/framework/views \
+         storage/logs \
+         bootstrap/cache
+chmod -R 775 storage bootstrap/cache || true
+chown -R www-data:www-data storage bootstrap/cache || true
+
 if [ -f artisan ]; then
+  # Ensure an .env exists (bootstrap from example if missing)
+  if [ ! -f .env ] && [ -f .env.example ]; then
+    echo "No .env found. Seeding from .env.example..."
+    cp .env.example .env || true
+  fi
+
+  # Generate app key if missing
   if ! grep -q "^APP_KEY=" .env 2>/dev/null || [ -z "$(grep '^APP_KEY=' .env | cut -d= -f2-)" ]; then
+    echo "Generating APP_KEY..."
     php artisan key:generate --force || true
   fi
+
+  # Always clear caches so new env/APP_KEY is picked up
+  php artisan optimize:clear || php artisan config:clear || true
 
   echo "Running migrations..."
   php artisan migrate --force || true

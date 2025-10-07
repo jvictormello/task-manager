@@ -14,3 +14,4 @@ if [ -f package.json ] && [ ! -d node_modules ]; then
 fi
 
 exec "$@"
+
