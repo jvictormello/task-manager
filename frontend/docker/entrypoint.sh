@@ -13,5 +13,10 @@ if [ -f package.json ] && [ ! -d node_modules ]; then
   npm install --no-audit --no-fund || true
 fi
 
-exec "$@"
+# Seed .env from example if missing so VITE_API_URL is defined
+if [ ! -f .env ] && [ -f .env.example ]; then
+  echo "Seeding frontend .env from .env.example..."
+  cp .env.example .env || true
+fi
 
+exec "$@"
