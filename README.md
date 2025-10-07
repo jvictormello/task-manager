@@ -170,9 +170,3 @@ docker compose exec api php artisan test -- --do-not-cache-result
   - Responsive, accessible UI with clear feedback
   - API integration with error handling
   - Dockerfiles and Vite dev server
-
-## Bonus Ideas
-- Advanced TS types (utility/generics) in client and components
-- OpenAPI/Swagger generation and publishing
-- Search and sorting UX enhancements
-- Real‑time updates (WebSockets/SSE)
