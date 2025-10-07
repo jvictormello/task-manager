@@ -2,9 +2,13 @@ FROM php:8.3-fpm-alpine
 
 WORKDIR /var/www/html
 
-RUN apk add --no-cache git unzip postgresql-dev icu-dev oniguruma curl \
+RUN apk add --no-cache git unzip postgresql-dev icu-dev oniguruma curl bash \
  && docker-php-ext-install intl opcache pcntl \
  && docker-php-ext-install pdo pdo_pgsql pgsql
+
+# Use bash for subsequent RUN commands and set default shell env
+SHELL ["/bin/bash", "-lc"]
+ENV SHELL=/bin/bash
 
 RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer
 

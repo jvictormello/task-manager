@@ -8,6 +8,10 @@ ENV CI=true
 # Add git and bash for tooling that may expect them
 RUN apk add --no-cache git bash
 
+# Use bash for subsequent RUN commands and set default shell env
+SHELL ["/bin/bash", "-lc"]
+ENV SHELL=/bin/bash
+
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
