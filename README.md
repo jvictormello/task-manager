@@ -68,6 +68,13 @@ This runs on `docker compose up` (not during image build) and only after Postgre
 ## API Documentation
 The API returns JSON and uses standard HTTP status codes. All task listings are paginated by default with 10 items per page.
 
+### Swagger (OpenAPI)
+- UI: http://localhost:8000/api/documentation
+- JSON: http://localhost:8000/docs (file lives at `backend/storage/api-docs/api-docs.json`).
+- Auto-build: the `api` container builds the docs at startup.
+- Manual refresh: `docker compose exec api php artisan l5-swagger:generate`
+- Tip: whenever you change OpenAPI annotations, refresh the docs to see updates.
+
 ## API Endpoints
 - `GET /api/tasks` – list tasks (always paginated; default `per_page=10`)
 - `POST /api/tasks` – create a task
