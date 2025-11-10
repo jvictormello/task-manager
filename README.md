@@ -2,8 +2,9 @@
 
 Full‑stack task management system with a Laravel (PHP 8.2) API and a React + TypeScript frontend, fully containerized with Docker and Docker Compose. The project emphasizes typed contracts, clean components, server‑side pagination/sorting/filtering, and automated tests.
 
-## Presentation Video
-- Demo/Presentation (YouTube): https://youtu.be/1GMRUYxVPlE
+## Presentation Videos
+- v1 (table-based UI): https://youtu.be/1GMRUYxVPlE
+- v2 (kanban redesign): https://www.loom.com/share/3a128983e98644569ad79817db4fa77d
 
 ## Requirements
 - Docker 24+
