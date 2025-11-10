@@ -99,13 +99,22 @@ const App = () => {
   const tasks = taskListResponse?.data ?? [];
 
   const groupedTasks = useMemo(() => {
+    const direction = sortDir === 'asc' ? 1 : -1;
+
+    const getComparableValue = (task: Task) => {
+      if (sortBy === 'created_at') {
+        return new Date(task.createdAt).getTime();
+      }
+      return new Date(task.dueDate).getTime();
+    };
+
     return KANBAN_COLUMNS.reduce<Record<TaskStatus, Task[]>>((acc, column) => {
       acc[column.id] = tasks
         .filter((task) => task.status === column.id)
-        .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+        .sort((a, b) => (getComparableValue(a) - getComparableValue(b)) * direction);
       return acc;
     }, {} as Record<TaskStatus, Task[]>);
-  }, [tasks]);
+  }, [tasks, sortBy, sortDir]);
 
   const invalidateData = () => {
     queryClientInstance.invalidateQueries({ queryKey: ['tasks'] });
