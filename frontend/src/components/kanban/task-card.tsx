@@ -71,13 +71,13 @@ export const TaskCard = ({ task, onEdit, onDelete, onAdvanceStatus }: TaskCardPr
             <p className="font-semibold leading-snug text-foreground">{task.title}</p>
             <p className="text-sm text-muted-foreground line-clamp-3">{task.description}</p>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" aria-label="Task actions">
-                <MoreHorizontal className="h-4 w-4" />
+        <DropdownMenu modal={false}>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" aria-label="Task actions">
+              <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" onCloseAutoFocus={(event) => event.preventDefault()}>
               <DropdownMenuItem onSelect={() => onEdit(task)}>
                 <Pencil className="mr-2 h-4 w-4" /> Edit
               </DropdownMenuItem>
