@@ -18,6 +18,7 @@ import { TaskCardOverlay } from '@/components/kanban/task-card';
 import { TaskFormDialog } from '@/components/task-form-dialog';
 import { TaskFiltersSheet } from '@/components/task-filters-sheet';
 import { TaskStats } from '@/components/task-stats';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -272,6 +273,7 @@ const App = () => {
               </Button>
             </div>
             <Button onClick={() => handleCreateTask('pending')}>New task</Button>
+            <ThemeToggle />
           </div>
         </header>
 
