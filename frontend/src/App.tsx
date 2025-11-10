@@ -75,6 +75,7 @@ const App = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [formDefaultStatus, setFormDefaultStatus] = useState<TaskStatus>('pending');
+  const [lockStatusSelection, setLockStatusSelection] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Task | null>(null);
   const [activeDragTask, setActiveDragTask] = useState<Task | null>(null);
@@ -171,13 +172,15 @@ const App = () => {
     setEditingTask(task);
     setFormMode('edit');
     setFormDefaultStatus(task.status);
+    setLockStatusSelection(false);
     setFormOpen(true);
   };
 
-  const handleCreateTask = (status: TaskStatus) => {
+  const handleCreateTask = (status: TaskStatus, lockStatus = true) => {
     setEditingTask(null);
     setFormMode('create');
     setFormDefaultStatus(status);
+    setLockStatusSelection(lockStatus);
     setFormOpen(true);
   };
 
@@ -272,7 +275,7 @@ const App = () => {
                 <ArrowDownUp className="h-4 w-4" /> {sortDir === 'asc' ? 'Asc' : 'Desc'}
               </Button>
             </div>
-            <Button onClick={() => handleCreateTask('pending')}>New task</Button>
+            <Button onClick={() => handleCreateTask('pending', false)}>New task</Button>
             <ThemeToggle />
           </div>
         </header>
@@ -301,7 +304,7 @@ const App = () => {
                     onEdit={handleEditTask}
                     onDelete={handleDeleteTask}
                     onAdvanceStatus={handleAdvanceStatus}
-                    onCreateTask={handleCreateTask}
+                    onCreateTask={(status) => handleCreateTask(status, true)}
                   />
                 ))}
               </div>
@@ -317,10 +320,14 @@ const App = () => {
           mode={formMode}
           initialTask={editingTask ?? undefined}
           defaultStatus={formDefaultStatus}
+          lockStatus={lockStatusSelection}
           loading={createTaskMutation.isPending || updateTaskMutation.isPending}
           onOpenChange={(open) => {
             setFormOpen(open);
-            if (!open) setEditingTask(null);
+            if (!open) {
+              setEditingTask(null);
+              setLockStatusSelection(false);
+            }
           }}
           onSubmit={handleSubmitTask}
         />

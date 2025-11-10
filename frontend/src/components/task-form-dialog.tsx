@@ -44,6 +44,7 @@ interface TaskFormDialogProps {
   mode: 'create' | 'edit';
   initialTask?: Task | null;
   defaultStatus?: TaskStatus;
+  lockStatus?: boolean;
   loading: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: TaskPayload) => Promise<void> | void;
@@ -54,6 +55,7 @@ export const TaskFormDialog = ({
   mode,
   initialTask,
   defaultStatus = 'pending',
+  lockStatus = false,
   loading,
   onOpenChange,
   onSubmit,
@@ -132,7 +134,11 @@ export const TaskFormDialog = ({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Status</Label>
-              <Select value={form.watch('status')} onValueChange={(value: TaskStatus) => form.setValue('status', value)}>
+              <Select
+                value={form.watch('status')}
+                onValueChange={(value: TaskStatus) => form.setValue('status', value)}
+                disabled={lockStatus}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
@@ -145,6 +151,7 @@ export const TaskFormDialog = ({
                 </SelectContent>
               </Select>
               {errors.status && <p className="text-sm text-destructive">{errors.status.message}</p>}
+              {lockStatus && <p className="text-xs text-muted-foreground">Status is fixed for this column.</p>}
             </div>
 
             <div className="space-y-2">
