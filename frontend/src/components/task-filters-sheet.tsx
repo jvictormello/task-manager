@@ -34,6 +34,9 @@ export const TaskFiltersSheet = ({ filters, onApply, onClear }: TaskFiltersSheet
   const [open, setOpen] = useState(false);
   const [localFilters, setLocalFilters] = useState<TaskFilters>(filters);
 
+  const ANY_STATUS = 'any-status';
+  const ANY_PRIORITY = 'any-priority';
+
   const handleChange = (field: keyof TaskFilters, value?: string | number) => {
     setLocalFilters((prev) => ({
       ...prev,
@@ -102,14 +105,14 @@ export const TaskFiltersSheet = ({ filters, onApply, onClear }: TaskFiltersSheet
             <div className="space-y-2">
               <Label>Status</Label>
               <Select
-                value={localFilters.status ?? ''}
-                onValueChange={(value) => handleChange('status', value as TaskStatus)}
+                value={localFilters.status ?? ANY_STATUS}
+                onValueChange={(value) => handleChange('status', value === ANY_STATUS ? undefined : (value as TaskStatus))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Any" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Any</SelectItem>
+                  <SelectItem value={ANY_STATUS}>Any</SelectItem>
                   {TASK_STATUS_OPTIONS.map(({ value, label }) => (
                     <SelectItem key={value} value={value}>
                       {label}
@@ -121,14 +124,14 @@ export const TaskFiltersSheet = ({ filters, onApply, onClear }: TaskFiltersSheet
             <div className="space-y-2">
               <Label>Priority</Label>
               <Select
-                value={localFilters.priority ?? ''}
-                onValueChange={(value) => handleChange('priority', value as TaskPriority)}
+                value={localFilters.priority ?? ANY_PRIORITY}
+                onValueChange={(value) => handleChange('priority', value === ANY_PRIORITY ? undefined : (value as TaskPriority))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Any" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Any</SelectItem>
+                  <SelectItem value={ANY_PRIORITY}>Any</SelectItem>
                   {TASK_PRIORITY_OPTIONS.map(({ value, label }) => (
                     <SelectItem key={value} value={value}>
                       {label}
