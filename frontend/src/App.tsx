@@ -1,11 +1,20 @@
 import { useMemo, useState } from 'react';
-import type { DragEndEvent } from '@dnd-kit/core';
-import { DndContext, PointerSensor, closestCorners, useSensor, useSensors } from '@dnd-kit/core';
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  pointerWithin,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from '@dnd-kit/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowDownUp, Loader2 } from 'lucide-react';
 
 import type { Task, TaskFilters, TaskPayload, TaskStatus } from '@/types/task';
 import { TaskColumn, type KanbanColumnDefinition } from '@/components/kanban/task-column';
+import { TaskCardOverlay } from '@/components/kanban/task-card';
 import { TaskFormDialog } from '@/components/task-form-dialog';
 import { TaskFiltersSheet } from '@/components/task-filters-sheet';
 import { TaskStats } from '@/components/task-stats';
@@ -67,6 +76,7 @@ const App = () => {
   const [formDefaultStatus, setFormDefaultStatus] = useState<TaskStatus>('pending');
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Task | null>(null);
+  const [activeDragTask, setActiveDragTask] = useState<Task | null>(null);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 10 } }));
 
@@ -185,8 +195,14 @@ const App = () => {
     });
   };
 
+  const handleDragStart = (event: DragStartEvent) => {
+    const activeTask = event.active.data.current?.task as Task | undefined;
+    setActiveDragTask(activeTask ?? null);
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    setActiveDragTask(null);
     if (!over) return;
 
     const activeTask = active.data.current?.task as Task | undefined;
@@ -205,6 +221,10 @@ const App = () => {
         dueDate: activeTask.dueDate,
       },
     });
+  };
+
+  const handleDragCancel = () => {
+    setActiveDragTask(null);
   };
 
   const onApplyFilters = (nextFilters: TaskFilters) => {
@@ -254,7 +274,13 @@ const App = () => {
               <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading tasks...
             </div>
           ) : (
-            <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={pointerWithin}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+              onDragCancel={handleDragCancel}
+            >
               <div className="grid gap-4 lg:grid-cols-3">
                 {KANBAN_COLUMNS.map((column) => (
                   <TaskColumn
@@ -268,6 +294,9 @@ const App = () => {
                   />
                 ))}
               </div>
+              <DragOverlay dropAnimation={null}>
+                {activeDragTask ? <TaskCardOverlay task={activeDragTask} /> : null}
+              </DragOverlay>
             </DndContext>
           )}
         </div>
@@ -290,7 +319,8 @@ const App = () => {
             <AlertDialogHeader>
               <AlertDialogTitle>Delete task</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete task #{deleteTarget?.id}? This action can be undone from backups but is not recommended.
+                Are you sure you want to delete “{deleteTarget?.title ?? `task #${deleteTarget?.id}`}”? This action can be undone from backups but is not
+                recommended.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

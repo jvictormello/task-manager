@@ -29,6 +29,7 @@ interface TaskCardProps {
   onEdit: (task: Task) => void;
   onDelete: (task: Task) => void;
   onAdvanceStatus: (task: Task, nextStatus: TaskStatus) => void;
+  disableInteractions?: boolean;
 }
 
 const getNextAction = (task: Task): NextAction => {
@@ -120,6 +121,31 @@ export const TaskCard = ({ task, onEdit, onDelete, onAdvanceStatus }: TaskCardPr
             <CheckCircle2 className="mr-2 h-4 w-4" /> Completed
           </Button>
         )}
+      </div>
+    </Card>
+  );
+};
+
+interface TaskCardOverlayProps {
+  task: Task;
+}
+
+export const TaskCardOverlay = ({ task }: TaskCardOverlayProps) => {
+  const priorityClass = priorityStyles[task.priority];
+
+  return (
+    <Card className="border border-border/80 bg-card/90 shadow-2xl">
+      <div className="flex flex-col gap-3 p-4">
+        <div>
+          <p className="font-semibold leading-snug text-foreground">{task.title}</p>
+          <p className="text-sm text-muted-foreground line-clamp-2">{task.description}</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge className={priorityClass}>{task.priority}</Badge>
+          <Badge variant="secondary" className="flex items-center gap-1">
+            <Clock3 className="h-3.5 w-3.5" /> {formatRelativeDate(task.dueDate)}
+          </Badge>
+        </div>
       </div>
     </Card>
   );
