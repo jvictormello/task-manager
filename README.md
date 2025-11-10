@@ -2,12 +2,14 @@
 
 Full‑stack task management system with a Laravel (PHP 8.2) API and a React + TypeScript frontend, fully containerized with Docker and Docker Compose. The project emphasizes typed contracts, clean components, server‑side pagination/sorting/filtering, and automated tests.
 
-## Presentation Video
-- Demo/Presentation (YouTube): https://youtu.be/1GMRUYxVPlE
+## Presentation Videos
+- v1 (table-based UI): https://youtu.be/1GMRUYxVPlE
+- v2 (kanban redesign): https://www.loom.com/share/3a128983e98644569ad79817db4fa77d
 
 ## Requirements
 - Docker 24+
 - Docker Compose V2
+- Node.js 20.19+ (only required if you plan to run the Vite dev server outside Docker)
 
 ## Services
 - `db`: Postgres 16 (port 5432)
@@ -61,12 +63,12 @@ Automatic migrations at container startup: the API entrypoint (see `backend/dock
 This runs on `docker compose up` (not during image build) and only after Postgres passes healthcheck.
 
 ### Frontend UI
-- React + TypeScript single-page app (Vite) with Dockerized dev server
-- Task table with inline actions (edit, delete, mark completed) and status-aware badges
-- Powerful filters (id/title/description/status/priority/date ranges) and column sorting (id/title/created/updated/due)
-- Modal forms for create/edit with validation + error feedback; confirmation dialog for delete
-- Dashboard statistics rendered from `/api/tasks/statistics`
-- Reusable components (filters, modal, spinner, feedback banners) and accessible keyboard-friendly interactions
+- React + TypeScript single-page app (Vite) with Tailwind + shadcn/ui
+- Kanban board with drag-and-drop cards (thanks to `@dnd-kit`) and live API updates
+- Filters drawer (status/priority/text/date ranges) and light sorting controls
+- Modal forms powered by react-hook-form + Zod, with toast feedback for all mutations
+- Dashboard cards summarizing totals, statuses, and priorities
+- Reusable UI primitives (buttons, sheets, dropdowns, badges) and accessible keyboard-friendly interactions
 
 ## API Documentation
 The API returns JSON and uses standard HTTP status codes. All task listings are paginated by default with 10 items per page.
@@ -118,6 +120,18 @@ Examples:
 - `GET /api/tasks?sort_by=title&sort_dir=asc&per_page=20&page=1`
 - `GET /api/tasks?status=pending&priority=high&title=bug`
 - `GET /api/tasks?due_date_from=2025-10-01&due_date_to=2025-10-31`
+
+## Running the frontend locally (optional)
+The Docker stack already runs the React app on `http://localhost:3000`. If you prefer to work outside Docker:
+
+```bash
+cd frontend
+source ~/.nvm/nvm.sh && nvm use 20.19.0
+npm install
+npm run dev
+```
+
+Builds run with `npm run build` (same command used by the Docker image).
 
 ### Response shape for paginated lists
 ```json

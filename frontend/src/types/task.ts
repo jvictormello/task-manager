@@ -2,6 +2,18 @@ export type TaskStatus = 'pending' | 'in_progress' | 'completed';
 
 export type TaskPriority = 'low' | 'medium' | 'high';
 
+export const TASK_STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
+  { value: 'pending', label: 'To Do' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'completed', label: 'Completed' },
+];
+
+export const TASK_PRIORITY_OPTIONS: { value: TaskPriority; label: string }[] = [
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+];
+
 export interface Task {
   id: number;
   title: string;

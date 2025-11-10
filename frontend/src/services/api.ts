@@ -68,7 +68,7 @@ const request = async <T>(path: string, options: RequestOptions = {}): Promise<T
 };
 
 export const taskApi = {
-  async list(params: TaskFilters & { perPage?: number; sortBy?: string; sortDir?: string }) {
+  async list(params: TaskFilters & { per_page?: number; sort_by?: string; sort_dir?: string }) {
     const queryParams: Record<string, unknown> = mapKeysToSnake({ ...params });
     return request<TaskListResponse>('/tasks', { queryParams });
   },
