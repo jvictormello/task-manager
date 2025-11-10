@@ -52,6 +52,8 @@ const KANBAN_COLUMNS: KanbanColumnDefinition[] = [
   },
 ];
 
+const MAX_PER_PAGE = 100;
+
 const App = () => {
   const queryClientInstance = useQueryClient();
   const { toast } = useToast();
@@ -75,7 +77,7 @@ const App = () => {
         ...filters,
         sort_by: sortBy,
         sort_dir: sortDir,
-        per_page: 200,
+        per_page: MAX_PER_PAGE,
       }),
   });
 
@@ -169,15 +171,15 @@ const App = () => {
     }
   };
 
-  const handleMarkComplete = (task: Task) => {
-    if (task.status === 'completed') return;
+  const handleAdvanceStatus = (task: Task, nextStatus: TaskStatus) => {
+    if (task.status === nextStatus) return;
     updateTaskMutation.mutate({
       id: task.id,
       payload: {
         title: task.title,
         description: task.description,
         priority: task.priority,
-        status: 'completed',
+        status: nextStatus,
         dueDate: task.dueDate,
       },
     });
@@ -261,7 +263,7 @@ const App = () => {
                     tasks={groupedTasks[column.id] ?? []}
                     onEdit={handleEditTask}
                     onDelete={handleDeleteTask}
-                    onMarkComplete={handleMarkComplete}
+                    onAdvanceStatus={handleAdvanceStatus}
                     onCreateTask={handleCreateTask}
                   />
                 ))}

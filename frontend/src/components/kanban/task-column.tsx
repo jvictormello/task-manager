@@ -22,11 +22,11 @@ interface TaskColumnProps {
   tasks: Task[];
   onEdit: (task: Task) => void;
   onDelete: (task: Task) => void;
-  onMarkComplete: (task: Task) => void;
+  onAdvanceStatus: (task: Task, nextStatus: TaskStatus) => void;
   onCreateTask: (status: TaskStatus) => void;
 }
 
-export const TaskColumn = ({ definition, tasks, onEdit, onDelete, onMarkComplete, onCreateTask }: TaskColumnProps) => {
+export const TaskColumn = ({ definition, tasks, onEdit, onDelete, onAdvanceStatus, onCreateTask }: TaskColumnProps) => {
   const { setNodeRef, isOver } = useDroppable({ id: definition.id, data: { columnId: definition.id } });
 
   return (
@@ -55,7 +55,7 @@ export const TaskColumn = ({ definition, tasks, onEdit, onDelete, onMarkComplete
           <SortableContext items={tasks.map((task) => task.id.toString())} strategy={verticalListSortingStrategy}>
             <div className="space-y-3">
               {tasks.map((task) => (
-                <TaskCard key={task.id} task={task} onEdit={onEdit} onDelete={onDelete} onMarkComplete={onMarkComplete} />
+                <TaskCard key={task.id} task={task} onEdit={onEdit} onDelete={onDelete} onAdvanceStatus={onAdvanceStatus} />
               ))}
               {tasks.length === 0 && (
                 <div className="rounded-lg border border-dashed border-border/60 bg-muted/30 p-4 text-center text-sm text-muted-foreground">

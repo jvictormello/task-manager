@@ -4,7 +4,7 @@ import { CheckCircle2, Clock3, MoreHorizontal, Pencil, Trash2 } from 'lucide-rea
 
 import { cn } from '@/lib/utils';
 import { formatDateTime, formatRelativeDate } from '@/utils/date';
-import type { Task } from '@/types/task';
+import type { Task, TaskStatus } from '@/types/task';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,14 +22,26 @@ const priorityStyles: Record<Task['priority'], string> = {
   high: 'bg-rose-100 text-rose-700 border border-rose-200',
 };
 
+type NextAction = { label: string; status: TaskStatus } | null;
+
 interface TaskCardProps {
   task: Task;
   onEdit: (task: Task) => void;
   onDelete: (task: Task) => void;
-  onMarkComplete: (task: Task) => void;
+  onAdvanceStatus: (task: Task, nextStatus: TaskStatus) => void;
 }
 
-export const TaskCard = ({ task, onEdit, onDelete, onMarkComplete }: TaskCardProps) => {
+const getNextAction = (task: Task): NextAction => {
+  if (task.status === 'pending') {
+    return { label: 'Start execution', status: 'in_progress' };
+  }
+  if (task.status === 'in_progress') {
+    return { label: 'Mark completed', status: 'completed' };
+  }
+  return null;
+};
+
+export const TaskCard = ({ task, onEdit, onDelete, onAdvanceStatus }: TaskCardProps) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id.toString(),
     data: { task, columnId: task.status },
@@ -40,7 +52,7 @@ export const TaskCard = ({ task, onEdit, onDelete, onMarkComplete }: TaskCardPro
     transition,
   } as React.CSSProperties;
 
-  const canComplete = task.status !== 'completed';
+  const nextAction = getNextAction(task);
 
   return (
     <Card
@@ -94,15 +106,20 @@ export const TaskCard = ({ task, onEdit, onDelete, onMarkComplete }: TaskCardPro
           <span>Updated {formatRelativeDate(task.updatedAt)}</span>
         </div>
 
-        <Button
-          variant={canComplete ? 'default' : 'secondary'}
-          size="sm"
-          className="w-full"
-          onClick={() => canComplete && onMarkComplete(task)}
-          disabled={!canComplete}
-        >
-          <CheckCircle2 className="mr-2 h-4 w-4" /> {canComplete ? 'Mark completed' : 'Completed'}
-        </Button>
+        {nextAction ? (
+          <Button
+            variant={nextAction.status === 'completed' ? 'default' : 'secondary'}
+            size="sm"
+            className="w-full"
+            onClick={() => onAdvanceStatus(task, nextAction.status)}
+          >
+            <CheckCircle2 className="mr-2 h-4 w-4" /> {nextAction.label}
+          </Button>
+        ) : (
+          <Button variant="secondary" size="sm" className="w-full" disabled>
+            <CheckCircle2 className="mr-2 h-4 w-4" /> Completed
+          </Button>
+        )}
       </div>
     </Card>
   );
