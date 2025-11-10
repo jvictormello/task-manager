@@ -1,335 +1,312 @@
-import { useCallback, useEffect, useState } from 'react';
-import TaskFiltersPanel from './components/TaskFilters';
-import TaskTable from './components/TaskTable';
-import TaskFormModal from './components/TaskFormModal';
-import ConfirmDialog from './components/ConfirmDialog';
-import FeedbackBanner from './components/FeedbackBanner';
-import StatsPanel from './components/StatsPanel';
-import Spinner from './components/Spinner';
-import type { Task, TaskFilters, TaskListResponse, TaskPayload, TaskStatistics } from './types/task';
-import { ApiError, taskApi } from './services/api';
-import './App.css';
+import { useMemo, useState } from 'react';
+import type { DragEndEvent } from '@dnd-kit/core';
+import { DndContext, PointerSensor, closestCorners, useSensor, useSensors } from '@dnd-kit/core';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ArrowDownUp, Loader2 } from 'lucide-react';
 
-const DEFAULT_PER_PAGE = 10;
-const PER_PAGE_OPTIONS = [10, 20, 50];
+import type { Task, TaskFilters, TaskPayload, TaskStatus } from '@/types/task';
+import { TaskColumn, type KanbanColumnDefinition } from '@/components/kanban/task-column';
+import { TaskFormDialog } from '@/components/task-form-dialog';
+import { TaskFiltersSheet } from '@/components/task-filters-sheet';
+import { TaskStats } from '@/components/task-stats';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { taskApi } from '@/services/api';
+import type { TaskStatistics } from '@/types/task';
+
+const KANBAN_COLUMNS: KanbanColumnDefinition[] = [
+  {
+    id: 'pending',
+    title: 'To Do',
+    description: 'Ideas, backlog items and fresh requests.',
+    accentClass: 'bg-blue-50 text-blue-700 border-blue-200',
+  },
+  {
+    id: 'in_progress',
+    title: 'In Progress',
+    description: 'Work that is currently being tackled.',
+    accentClass: 'bg-amber-50 text-amber-700 border-amber-200',
+  },
+  {
+    id: 'completed',
+    title: 'Done',
+    description: 'Delivered and signed-off tasks.',
+    accentClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  },
+];
 
 const App = () => {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [statistics, setStatistics] = useState<TaskStatistics | null>(null);
-  const [pagination, setPagination] = useState<TaskListResponse['meta'] | null>(null);
+  const queryClientInstance = useQueryClient();
+  const { toast } = useToast();
 
   const [filters, setFilters] = useState<TaskFilters>({});
-  const [sortBy, setSortBy] = useState<'created_at' | 'updated_at' | 'due_date' | 'id' | 'title'>('created_at');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
-  const [page, setPage] = useState(1);
-  const [perPage, setPerPage] = useState(DEFAULT_PER_PAGE);
+  const [sortBy, setSortBy] = useState<'due_date' | 'created_at'>('due_date');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
-  const [loadingTasks, setLoadingTasks] = useState(false);
-  const [loadingStats, setLoadingStats] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
+  const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
+  const [formDefaultStatus, setFormDefaultStatus] = useState<TaskStatus>('pending');
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Task | null>(null);
 
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [savingTask, setSavingTask] = useState(false);
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 10 } }));
 
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [deleteLoading, setDeleteLoading] = useState(false);
-  const [completeConfirmOpen, setCompleteConfirmOpen] = useState(false);
-  const [completeLoading, setCompleteLoading] = useState(false);
-  const [taskToComplete, setTaskToComplete] = useState<Task | null>(null);
-
-  const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
-
-  const loadTasks = useCallback(async () => {
-    setLoadingTasks(true);
-    try {
-      const response = await taskApi.list({
+  const { data: taskListResponse, isLoading: loadingTasks } = useQuery({
+    queryKey: ['tasks', filters, sortBy, sortDir],
+    queryFn: () =>
+      taskApi.list({
         ...filters,
-        sortBy,
-        sortDir,
-        perPage,
-        page,
-      });
-      setTasks(response.data);
-      setPagination(response.meta);
-      if (response.meta.current_page !== page) {
-        setPage(response.meta.current_page);
-      }
-    } catch (error) {
-      console.error(error);
-      const message = error instanceof ApiError ? error.message : 'Unable to load tasks. Please try again.';
-      setFeedback({ type: 'error', message });
-      setPagination(null);
-    } finally {
-      setLoadingTasks(false);
+        sort_by: sortBy,
+        sort_dir: sortDir,
+        per_page: 200,
+      }),
+  });
+
+  const { data: stats, isLoading: loadingStats } = useQuery<TaskStatistics>({
+    queryKey: ['tasks', 'stats'],
+    queryFn: () => taskApi.statistics(),
+  });
+
+  const tasks = taskListResponse?.data ?? [];
+
+  const groupedTasks = useMemo(() => {
+    return KANBAN_COLUMNS.reduce<Record<TaskStatus, Task[]>>((acc, column) => {
+      acc[column.id] = tasks
+        .filter((task) => task.status === column.id)
+        .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+      return acc;
+    }, {} as Record<TaskStatus, Task[]>);
+  }, [tasks]);
+
+  const invalidateData = () => {
+    queryClientInstance.invalidateQueries({ queryKey: ['tasks'] });
+    queryClientInstance.invalidateQueries({ queryKey: ['tasks', 'stats'] });
+  };
+
+  const createTaskMutation = useMutation({
+    mutationFn: (payload: TaskPayload) => taskApi.create(payload),
+    onSuccess: () => {
+      invalidateData();
+      toast({ title: 'Task created', description: 'The task has been added to the board.' });
+      setFormOpen(false);
+    },
+    onError: (error) => {
+      toast({ title: 'Unable to create the task', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  const updateTaskMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: number; payload: TaskPayload }) => taskApi.update(id, payload),
+    onSuccess: () => {
+      invalidateData();
+      toast({ title: 'Task updated', description: 'Changes saved successfully.' });
+      setFormOpen(false);
+      setEditingTask(null);
+    },
+    onError: (error) => {
+      toast({ title: 'Unable to update task', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  const deleteTaskMutation = useMutation({
+    mutationFn: (id: number) => taskApi.delete(id),
+    onSuccess: () => {
+      invalidateData();
+      toast({ title: 'Task deleted', description: 'The task was moved out of the board.' });
+      setDeleteTarget(null);
+    },
+    onError: (error) => {
+      toast({ title: 'Unable to delete task', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  const handleSubmitTask = async (values: TaskPayload) => {
+    if (formMode === 'edit' && editingTask) {
+      await updateTaskMutation.mutateAsync({ id: editingTask.id, payload: values });
+    } else {
+      await createTaskMutation.mutateAsync(values);
     }
-  }, [filters, sortBy, sortDir, page, perPage]);
-
-  const loadStatistics = useCallback(async () => {
-    setLoadingStats(true);
-    try {
-      const stats = await taskApi.statistics();
-      setStatistics(stats);
-    } catch (error) {
-      console.error(error);
-      setFeedback({ type: 'error', message: 'Unable to load statistics.' });
-    } finally {
-      setLoadingStats(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadTasks();
-  }, [loadTasks]);
-
-  useEffect(() => {
-    void loadStatistics();
-  }, [loadStatistics]);
-
-  const openCreateModal = () => {
-    setModalMode('create');
-    setSelectedTask(null);
-    setModalOpen(true);
   };
 
-  const openEditModal = (task: Task) => {
-    setModalMode('edit');
-    setSelectedTask(task);
-    setModalOpen(true);
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setFormMode('edit');
+    setFormDefaultStatus(task.status);
+    setFormOpen(true);
   };
 
-  const handleSaveTask = async (payload: TaskPayload, id?: number) => {
-    setSavingTask(true);
-    try {
-      if (modalMode === 'edit' && id) {
-        await taskApi.update(id, payload);
-        setFeedback({ type: 'success', message: 'Task updated successfully.' });
-      } else {
-        await taskApi.create(payload);
-        setFeedback({ type: 'success', message: 'Task created successfully.' });
-      }
-      await Promise.all([loadTasks(), loadStatistics()]);
-    } finally {
-      setSavingTask(false);
+  const handleCreateTask = (status: TaskStatus) => {
+    setEditingTask(null);
+    setFormMode('create');
+    setFormDefaultStatus(status);
+    setFormOpen(true);
+  };
+
+  const handleDeleteTask = (task: Task) => {
+    setDeleteTarget(task);
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteTarget) {
+      deleteTaskMutation.mutate(deleteTarget.id);
     }
   };
 
-  const handleRequestMarkComplete = (task: Task) => {
-    setTaskToComplete(task);
-    setCompleteConfirmOpen(true);
-  };
-
-  const handleConfirmMarkComplete = async () => {
-    if (!taskToComplete) return;
-    setCompleteLoading(true);
-    try {
-      await taskApi.update(taskToComplete.id, {
-        title: taskToComplete.title,
-        description: taskToComplete.description,
-        priority: taskToComplete.priority,
+  const handleMarkComplete = (task: Task) => {
+    if (task.status === 'completed') return;
+    updateTaskMutation.mutate({
+      id: task.id,
+      payload: {
+        title: task.title,
+        description: task.description,
+        priority: task.priority,
         status: 'completed',
-        dueDate: taskToComplete.dueDate,
-      });
-      setFeedback({ type: 'success', message: `Task #${taskToComplete.id} marked as completed.` });
-      await Promise.all([loadTasks(), loadStatistics()]);
-    } catch (error) {
-      const message = error instanceof ApiError ? error.message : 'Unable to update task.';
-      setFeedback({ type: 'error', message });
-    } finally {
-      setCompleteLoading(false);
-      setCompleteConfirmOpen(false);
-      setTaskToComplete(null);
-    }
-  };
-
-  const handleCancelMarkComplete = () => {
-    setCompleteConfirmOpen(false);
-    setTaskToComplete(null);
-  };
-
-  const handleDeleteTask = async () => {
-    if (!selectedTask) return;
-    setDeleteLoading(true);
-    try {
-      await taskApi.delete(selectedTask.id);
-      setFeedback({ type: 'success', message: `Task #${selectedTask.id} deleted.` });
-      await Promise.all([loadTasks(), loadStatistics()]);
-    } catch (error) {
-      const message = error instanceof ApiError ? error.message : 'Unable to delete task.';
-      setFeedback({ type: 'error', message });
-    } finally {
-      setDeleteLoading(false);
-      setConfirmOpen(false);
-      setSelectedTask(null);
-    }
-  };
-
-  const handleApplyFilters = (newFilters: TaskFilters) => {
-    setFilters(newFilters);
-    setPage(1);
-  };
-
-  const handleClearFilters = () => {
-    setFilters({});
-    setPage(1);
-  };
-
-  const handleSort = (field: 'id' | 'title' | 'created_at' | 'updated_at' | 'due_date') => {
-    setSortDir((prevDir) => {
-      const isSameField = sortBy === field;
-      const nextDir = isSameField ? (prevDir === 'asc' ? 'desc' : 'asc') : 'asc';
-      setSortBy(field);
-      return nextDir;
+        dueDate: task.dueDate,
+      },
     });
-    setPage(1);
   };
 
-  const handlePerPageChange = (value: number) => {
-    setPerPage(value);
-    setPage(1);
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeTask = active.data.current?.task as Task | undefined;
+    if (!activeTask) return;
+
+    const destinationColumn = (over.data.current?.columnId ?? over.data.current?.task?.status) as TaskStatus | undefined;
+    if (!destinationColumn || destinationColumn === activeTask.status) return;
+
+    updateTaskMutation.mutate({
+      id: activeTask.id,
+      payload: {
+        title: activeTask.title,
+        description: activeTask.description,
+        priority: activeTask.priority,
+        status: destinationColumn,
+        dueDate: activeTask.dueDate,
+      },
+    });
   };
 
-  const handlePageChange = (nextPage: number) => {
-    if (!pagination) return;
-    const clamped = Math.max(1, Math.min(nextPage, pagination.last_page));
-    if (clamped !== page) {
-      setPage(clamped);
-    }
+  const onApplyFilters = (nextFilters: TaskFilters) => {
+    setFilters(nextFilters);
   };
 
-  const totalTasks = pagination?.total ?? tasks.length;
-  const showingFrom = pagination?.from ?? (tasks.length > 0 ? 1 : 0);
-  const showingTo = pagination?.to ?? tasks.length;
+  const onClearFilters = () => {
+    setFilters({});
+  };
+
+  const tasksLoadingState = loadingTasks && tasks.length === 0;
 
   return (
-    <div className="app">
-      <header className="app__header">
-        <div>
-          <h1>Task Manager</h1>
-          <p>Plan, track, and complete your tasks efficiently.</p>
-        </div>
-        <button type="button" className="button button--primary" onClick={openCreateModal}>
-          + New task
-        </button>
-      </header>
+    <TooltipProvider>
+      <div className="mx-auto flex w-full max-w-[1300px] flex-col gap-6 px-4 py-8">
+        <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-sm uppercase tracking-wider text-muted-foreground">Team workspace</p>
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground">Kanban planner</h1>
+            <p className="text-muted-foreground">Visualize the flow of work and stay aligned on delivery.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <TaskFiltersSheet filters={filters} onApply={onApplyFilters} onClear={onClearFilters} />
+            <div className="flex items-center gap-2">
+              <Select value={sortBy} onValueChange={(value: 'due_date' | 'created_at') => setSortBy(value)}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="due_date">Due date</SelectItem>
+                  <SelectItem value="created_at">Created</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button variant="outline" className="gap-2" onClick={() => setSortDir((dir) => (dir === 'asc' ? 'desc' : 'asc'))}>
+                <ArrowDownUp className="h-4 w-4" /> {sortDir === 'asc' ? 'Asc' : 'Desc'}
+              </Button>
+            </div>
+            <Button onClick={() => handleCreateTask('pending')}>New task</Button>
+          </div>
+        </header>
 
-      {feedback && (
-        <FeedbackBanner
-          type={feedback.type}
-          message={feedback.message}
-          onClose={() => setFeedback(null)}
-        />
-      )}
+        <TaskStats stats={stats ?? null} loading={loadingStats} />
 
-      <StatsPanel stats={statistics} loading={loadingStats} />
-
-      <TaskFiltersPanel
-        initialFilters={filters}
-        onApply={handleApplyFilters}
-        onClear={handleClearFilters}
-      />
-
-      <section aria-labelledby="tasks-heading">
-        <div className="app__table-header">
-          <h2 id="tasks-heading">Tasks</h2>
-          <div className="app__table-actions">
-            <label className="app__per-page" htmlFor="per-page-select">
-              <span>Per page</span>
-              <select
-                id="per-page-select"
-                value={perPage}
-                onChange={(event) => handlePerPageChange(Number(event.target.value))}
-              >
-                {PER_PAGE_OPTIONS.map((option) => (
-                  <option key={option} value={option}>{option}</option>
+        <div className="rounded-2xl border border-dashed border-border/60 bg-muted/40 p-4">
+          {tasksLoadingState ? (
+            <div className="flex items-center justify-center py-16 text-muted-foreground">
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading tasks...
+            </div>
+          ) : (
+            <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
+              <div className="grid gap-4 lg:grid-cols-3">
+                {KANBAN_COLUMNS.map((column) => (
+                  <TaskColumn
+                    key={column.id}
+                    definition={column}
+                    tasks={groupedTasks[column.id] ?? []}
+                    onEdit={handleEditTask}
+                    onDelete={handleDeleteTask}
+                    onMarkComplete={handleMarkComplete}
+                    onCreateTask={handleCreateTask}
+                  />
                 ))}
-              </select>
-            </label>
-            {loadingTasks && (
-              <span className="app__loading">
-                <Spinner />
-                <span>Loading...</span>
-              </span>
-            )}
-          </div>
+              </div>
+            </DndContext>
+          )}
         </div>
-        <TaskTable
-          tasks={tasks}
-          loading={loadingTasks}
-          onEdit={openEditModal}
-          onDelete={(task) => {
-            setSelectedTask(task);
-            setConfirmOpen(true);
+
+        <TaskFormDialog
+          open={formOpen}
+          mode={formMode}
+          initialTask={editingTask ?? undefined}
+          defaultStatus={formDefaultStatus}
+          loading={createTaskMutation.isPending || updateTaskMutation.isPending}
+          onOpenChange={(open) => {
+            setFormOpen(open);
+            if (!open) setEditingTask(null);
           }}
-          onMarkComplete={handleRequestMarkComplete}
-          sortBy={sortBy}
-          sortDir={sortDir}
-          onSort={handleSort}
+          onSubmit={handleSubmitTask}
         />
-        {pagination && (
-          <div className="app__pagination">
-            <div className="app__pagination-info">
-              {totalTasks > 0
-                ? `Showing ${showingFrom}–${showingTo} of ${totalTasks} tasks`
-                : 'No tasks to display'}
-            </div>
-            <div className="app__pagination-controls">
-              <button
-                type="button"
-                className="button button--ghost"
-                disabled={!pagination || pagination.current_page === 1}
-                onClick={() => handlePageChange((pagination?.current_page ?? 1) - 1)}
+
+        <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete task</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete task #{deleteTarget?.id}? This action can be undone from backups but is not recommended.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <Button variant="ghost" onClick={() => setDeleteTarget(null)}>
+                Cancel
+              </Button>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={handleConfirmDelete}
+                disabled={deleteTaskMutation.isPending}
               >
-                Previous
-              </button>
-              <span className="app__pagination-page">
-                Page {pagination.current_page} of {pagination.last_page}
-              </span>
-              <button
-                type="button"
-                className="button button--ghost"
-                disabled={!pagination || pagination.current_page === pagination.last_page}
-                onClick={() => handlePageChange((pagination?.current_page ?? 1) + 1)}
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
-      </section>
-
-      <TaskFormModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSubmit={handleSaveTask}
-        submitting={savingTask}
-        mode={modalMode}
-        initialTask={selectedTask}
-      />
-
-      <ConfirmDialog
-        isOpen={confirmOpen}
-        title="Delete task"
-        description={`Are you sure you want to delete task #${selectedTask?.id}? This will soft delete the task.`}
-        confirmLabel="Delete"
-        loading={deleteLoading}
-        onConfirm={() => void handleDeleteTask()}
-        onCancel={() => {
-          setConfirmOpen(false);
-          setSelectedTask(null);
-        }}
-      />
-
-      <ConfirmDialog
-        isOpen={completeConfirmOpen}
-        title="Mark task as completed"
-        description={`Mark task #${taskToComplete?.id} as completed?`}
-        confirmLabel="Mark completed"
-        loading={completeLoading}
-        onConfirm={() => void handleConfirmMarkComplete()}
-        onCancel={handleCancelMarkComplete}
-      />
-    </div>
+                {deleteTaskMutation.isPending ? 'Deleting...' : 'Delete'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </TooltipProvider>
   );
 };
 
